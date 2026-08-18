@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout(~{::title}, ~{::content})}">
+<title>注册</title>
+<div th:fragment="content" class="content">
+    <div class="auth-page">
+        <div class="auth-side">
+            <h2>加入商城</h2>
+            <p>注册后可收藏收货地址、查看订单，并体验 AI 智能客服。</p>
+        </div>
+        <div class="auth-box">
+            <h2>创建账号</h2>
+            <form class="form form-wide" onsubmit="registerSubmit(event)">
+                <input name="username" placeholder="用户名" required>
+                <input name="nickname" placeholder="昵称">
+                <input name="password" type="password" placeholder="密码" required>
+                <button class="btn" type="submit">注册</button>
+            </form>
+            <p>已有账号？<a href="/login">去登录</a></p>
+        </div>
+    </div>
+</div>
+</html>

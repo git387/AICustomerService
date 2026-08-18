@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout(~{::title}, ~{::content})}">
+<title>我的订单</title>
+<div th:fragment="content" class="content">
+    <div class="page-head">
+        <h2>我的订单</h2>
+        <a href="/">去逛商城</a>
+    </div>
+    <div th:if="${param.paySuccess != null}" class="success-banner">支付成功，订单状态已更新，可在下方查看。</div>
+
+    <div class="order-tabs" id="order-tabs" th:if="${orders != null and !orders.isEmpty()}">
+        <button type="button" class="order-tab active" data-status="">全部</button>
+        <button type="button" class="order-tab" data-status="UNPAID">待支付</button>
+        <button type="button" class="order-tab" data-status="PAID">已支付</button>
+        <button type="button" class="order-tab" data-status="SHIPPED">已发货</button>
+        <button type="button" class="order-tab" data-status="COMPLETED">已完成</button>
+        <button type="button" class="order-tab" data-status="CANCELLED">已取消</button>
+    </div>
+
+    <div th:if="${orders == null or orders.isEmpty()}" class="empty order-empty">
+        <p>还没有订单</p>
+        <a class="btn" href="/">去首页选购</a>
+    </div>
+
+    <div class="order-list" id="order-list">
+        <div class="card order-card" th:each="o : ${orders}" th:attr="data-status=${o.status.code}">
+            <div class="order-card-head">
+                <div>
+                    <span class="muted">订单号</span>
+                    <strong class="order-no" th:text="${o.orderNo}">订单号</strong>
+                    <button type="button" class="link-btn" th:onclick="|copyOrderNo('${o.orderNo}')|">复制</button>
+                </div>
+                <span class="status" th:classappend="' status-' + ${o.status.code}" th:text="${o.status.label}">状态</span>
+            </div>
+            <div class="order-card-body">
+                <div class="order-goods">
+                    <div class="order-goods-item" th:each="item, stat : ${o.items}" th:if="${stat.index &lt; 3}">
+                        <div class="order-item-img">
+                            <img th:if="${item.productImage != null and !item.productImage.isEmpty()}"
+                                 th:src="${item.productImage}" th:alt="${item.productName}">
+                            <div th:if="${item.productImage == null or item.productImage.isEmpty()}"
+                                 class="placeholder-img" th:text="${#strings.substring(item.productName,0,1)}">商</div>
+                        </div>
+                        <div class="order-goods-meta">
+                            <strong th:text="${item.productName}">商品</strong>
+                            <span class="muted" th:text="'¥' + ${item.price} + ' × ' + ${item.quantity}">数量</span>
+                        </div>
+                    </div>
+                    <p class="muted" th:if="${#lists.size(o.items) &gt; 3}"
+                       th:text="'等共 ' + ${#lists.size(o.items)} + ' 件商品'">更多</p>
+                </div>
+                <div class="order-side">
+                    <div class="order-amount">
+                        <span class="muted">实付</span>
+                        <span class="price" th:text="'¥' + ${o.totalAmount}">金额</span>
+                    </div>
+                    <p class="muted order-time"
+                       th:text="${o.createTime != null ? #strings.replace(o.createTime.toString(), 'T', ' ').substring(0, 16) : ''}">时间</p>
+                </div>
+            </div>
+            <div class="order-card-foot">
+                <p class="muted order-addr"
+                   th:text="${o.receiverName} + ' ' + ${o.receiverPhone} + ' · ' + ${o.address}">地址</p>
+                <div class="order-actions">
+                    <a class="btn btn-outline btn-sm" th:href="@{/orders/{id}(id=${o.id})}">查看详情</a>
+                    <a th:if="${o.status.canPay()}" class="btn btn-sm" th:href="@{/pay/{no}(no=${o.orderNo})}">去支付</a>
+                    <button th:if="${o.status.canCancel()}" class="btn btn-outline btn-sm"
+                            th:onclick="|cancelOrder(${o.id})|">取消订单</button>
+                </div>
+            </div>
+        </div>
+        <div id="order-filter-empty" class="empty" style="display:none">当前状态下暂无订单</div>
+    </div>
+
+    <script>
+        window.copyOrderNo = function(no) {
+            navigator.clipboard.writeText(no).then(() => toast('订单号已复制')).catch(() => toast(no));
+        };
+        window.cancelOrder = async function(id) {
+            if (!confirm('确认取消该订单？取消后不可恢复。')) return;
+            try {
+                await api('/api/orders/' + id + '/cancel', { method: 'POST' });
+                toast('订单已取消');
+                setTimeout(() => location.reload(), 500);
+            } catch (e) {
+                toast(e.message, { type: 'error' });
+            }
+        };
+        document.addEventListener('DOMContentLoaded', () => {
+            const tabs = document.querySelectorAll('.order-tab');
+            const cards = document.querySelectorAll('.order-card');
+            const empty = document.getElementById('order-filter-empty');
+            tabs.forEach(tab => tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                const status = tab.dataset.status;
+                let visible = 0;
+                cards.forEach(card => {
+                    const show = !status || card.dataset.status === status;
+                    card.style.display = show ? '' : 'none';
+                    if (show) visible++;
+                });
+                if (empty) empty.style.display = visible ? 'none' : '';
+            }));
+        });
+    </script>
+</div>
+</html>

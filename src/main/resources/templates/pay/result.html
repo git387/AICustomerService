@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout(~{::title}, ~{::content})}">
+<title>支付结果</title>
+<div th:fragment="content" class="content">
+    <div class="success-banner" th:if="${success}">
+        <strong th:text="${message}">支付成功</strong>
+        <span th:if="${orderNo != null}" th:text="'，订单号 ' + ${orderNo}"></span>
+        ，即将进入我的订单。
+    </div>
+    <div class="empty" th:if="${success == false}">
+        <h2>支付未完成</h2>
+        <p th:text="${message}">说明</p>
+        <a class="btn" href="/orders">返回订单</a>
+    </div>
+    <script>
+        setTimeout(function () { window.location.href = '/orders'; }, 1500);
+    </script>
+</div>
+</html>

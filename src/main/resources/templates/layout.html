@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:fragment="layout(title, content)">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:replace="${title}">基于Spring AI2.0的带智能客服的商城系统</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script th:src="@{/js/common.js}"></script>
+</head>
+<body th:classappend="${currentUser != null} ? 'is-login'">
+<header class="site-header">
+    <div class="container header-inner">
+        <a class="logo" href="/">AI 智能客服商城</a>
+        <form class="search-form" action="/" method="get">
+            <input type="text" name="keyword" placeholder="搜索耳机、台灯、茶叶..." th:value="${keyword}">
+            <button type="submit">搜索</button>
+        </form>
+        <nav class="nav">
+            <a href="/">首页</a>
+            <a class="nav-cart" href="/cart">购物车<span id="cart-badge" class="cart-badge" hidden></span></a>
+            <a href="/orders">订单</a>
+            <a href="/addresses">地址</a>
+            <a href="/chat">客服</a>
+            <a th:if="${currentUser == null}" href="/login">登录</a>
+            <a th:if="${currentUser != null}" href="javascript:logout()" th:text="'退出(' + ${currentUser.nickname} + ')'">退出</a>
+        </nav>
+    </div>
+</header>
+<main class="site-main">
+    <div class="container" th:replace="${content}">内容</div>
+</main>
+<footer class="site-footer">基于 Spring AI 2.0 的带智能客服的商城系统 · 入门学习版</footer>
+<a class="float-chat" href="/chat">智能客服</a>
+</body>
+</html>

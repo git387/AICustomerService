@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout(~{::title}, ~{::content})}">
+<title>首页 - 基于Spring AI2.0的带智能客服的商城系统</title>
+<div th:fragment="content" class="content">
+    <section class="hero">
+        <div>
+            <h1>春日好物，一站购齐</h1>
+            <p>支持购物车下单与支付宝沙箱支付，右下角可随时咨询智能客服。</p>
+        </div>
+        <div class="hero-actions">
+            <a class="btn" href="/chat">问问客服</a>
+            <a class="btn btn-outline" href="/orders" style="background:transparent;color:#fff;border-color:#fff">我的订单</a>
+        </div>
+    </section>
+    <div class="category-bar">
+        <a class="chip" th:classappend="${categoryId == null} ? ' active'" href="/">全部商品</a>
+        <a class="chip" th:each="c : ${categories}"
+           th:href="@{/(categoryId=${c.id})}"
+           th:text="${c.name}"
+           th:classappend="${categoryId == c.id} ? ' active'"></a>
+    </div>
+    <div class="product-grid" th:if="${products != null and !products.isEmpty()}">
+        <div class="card product-card" th:each="p : ${products}">
+            <a th:href="@{/product/{id}(id=${p.id})}">
+                <div class="thumb">
+                    <img th:if="${p.image != null and !p.image.isEmpty()}" th:src="${p.image}" th:alt="${p.name}">
+                    <div th:if="${p.image == null or p.image.isEmpty()}" class="placeholder-img" th:text="${#strings.substring(p.name,0,1)}">商</div>
+                </div>
+            </a>
+            <div class="body">
+                <a th:href="@{/product/{id}(id=${p.id})}"><h3 th:text="${p.name}">商品</h3></a>
+                <p class="muted" th:text="${p.description}">简介</p>
+                <div class="card-foot">
+                    <span class="price" th:text="'¥' + ${p.price}">¥0</span>
+                    <button class="btn btn-sm" type="button" th:onclick="|addToCart(${p.id}, 1, this)|">加购</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="empty" th:if="${products == null or products.isEmpty()}">当前分类暂无商品，换个分类看看吧</div>
+</div>
+</html>

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout(~{::title}, ~{::content})}">
+<title>结算</title>
+<div th:fragment="content" class="content">
+    <div class="page-head">
+        <h2>确认订单</h2>
+        <a href="/addresses">管理收货地址</a>
+    </div>
+    <div class="page-split">
+        <div>
+            <h3>选择收货地址</h3>
+            <div id="address-list" class="address-list">加载中...</div>
+        </div>
+        <form id="order-form" class="form card panel form-wide" onsubmit="submitOrder(event)">
+            <h3>收货信息</h3>
+            <input type="hidden" name="addressId">
+            <label>收货人</label>
+            <input name="receiverName" required>
+            <label>手机号</label>
+            <input name="receiverPhone" required>
+            <label>收货地址</label>
+            <textarea name="address" rows="3" required></textarea>
+            <label style="display:flex;align-items:center;gap:6px">
+                <input type="checkbox" name="saveAddress" style="width:auto"> 同时保存为新地址
+            </label>
+            <button class="btn" type="submit">提交订单并支付</button>
+        </form>
+    </div>
+    <script>
+        let addresses = [];
+        let selectedId = null;
+        async function loadAddresses() {
+            try {
+                const res = await api('/api/addresses');
+                addresses = res.data || [];
+                renderList();
+            } catch (e) {
+                document.getElementById('address-list').textContent = e.message;
+            }
+        }
+        function renderList() {
+            const box = document.getElementById('address-list');
+            if (!addresses.length) {
+                box.innerHTML = '<div class="empty">暂无保存的地址，请在右侧填写</div>';
+                return;
+            }
+            box.innerHTML = addresses.map(a => `
+                <div class="address-card ${a.id === selectedId ? 'active' : ''}" onclick="selectAddress(${a.id})">
+                    <div class="row">
+                        <strong>${a.receiverName} ${a.receiverPhone}</strong>
+                        ${a.isDefault === 1 ? '<span class="tag-default">默认</span>' : ''}
+                    </div>
+                    <p class="muted">${(a.province||'')+(a.city||'')+(a.district||'')+(a.detail||'')}</p>
+                </div>`).join('');
+            const def = addresses.find(a => a.isDefault === 1) || addresses[0];
+            if (def && selectedId == null) {
+                selectAddress(def.id);
+            }
+        }
+        window.selectAddress = function(id) {
+            const a = addresses.find(item => item.id === id);
+            if (!a) return;
+            selectedId = id;
+            const form = document.getElementById('order-form');
+            form.addressId.value = a.id;
+            form.receiverName.value = a.receiverName;
+            form.receiverPhone.value = a.receiverPhone;
+            form.address.value = (a.province||'') + (a.city||'') + (a.district||'') + (a.detail||'');
+            renderList();
+        };
+        function bindFormEdit() {
+            const form = document.getElementById('order-form');
+            ['receiverName', 'receiverPhone', 'address'].forEach(name => {
+                form[name].addEventListener('input', () => {
+                    form.addressId.value = '';
+                    selectedId = null;
+                    document.querySelectorAll('.address-card').forEach(el => el.classList.remove('active'));
+                });
+            });
+        }
+        window.submitOrder = async function(event) {
+            event.preventDefault();
+            const form = event.target;
+            try {
+                if (form.saveAddress.checked) {
+                    try {
+                        await api('/api/addresses', {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                receiverName: form.receiverName.value,
+                                receiverPhone: form.receiverPhone.value,
+                                detail: form.address.value,
+                                isDefault: 0
+                            })
+                        });
+                    } catch (saveErr) {
+                        if (!String(saveErr.message || '').includes('已存在')) {
+                            throw saveErr;
+                        }
+                    }
+                }
+                const payload = form.addressId.value
+                    ? { addressId: Number(form.addressId.value) }
+                    : {
+                        receiverName: form.receiverName.value,
+                        receiverPhone: form.receiverPhone.value,
+                        address: form.address.value
+                    };
+                const res = await api('/api/orders', {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+                const orderNo = res.data.orderNo;
+                if (confirm('下单成功，是否立即前往支付宝沙箱支付？')) {
+                    window.location.href = '/pay/' + orderNo;
+                } else {
+                    window.location.href = '/orders';
+                }
+            } catch (e) {
+                toast(e.message);
+            }
+        };
+        document.addEventListener('DOMContentLoaded', () => {
+            bindFormEdit();
+            loadAddresses();
+        });
+    </script>
+</div>
+</html>

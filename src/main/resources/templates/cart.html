@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout(~{::title}, ~{::content})}">
+<title>购物车</title>
+<div th:fragment="content" class="content">
+    <div class="page-head"><h2>购物车</h2><a href="/">继续逛逛</a></div>
+    <div id="cart-empty" class="empty">加载中...</div>
+    <div id="cart-wrap" class="page-split" style="display:none">
+        <table id="cart-table" class="table">
+            <thead>
+            <tr><th>商品</th><th>单价</th><th>数量</th><th>小计</th><th>操作</th></tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <aside class="card summary-card">
+            <h3>结算明细</h3>
+            <p class="muted" id="cart-count">共 0 件</p>
+            <span class="price" id="cart-total">¥0.00</span>
+            <a class="btn" href="/checkout" id="go-checkout" style="width:100%;text-align:center;display:block">去结算</a>
+        </aside>
+    </div>
+    <script>
+        async function loadCart() {
+            try {
+                const res = await api('/api/cart');
+                const list = res.data || [];
+                const empty = document.getElementById('cart-empty');
+                const wrap = document.getElementById('cart-wrap');
+                const tbody = document.querySelector('#cart-table tbody');
+                tbody.innerHTML = '';
+                if (!list.length) {
+                    empty.textContent = '购物车是空的，去首页挑选几件好物吧';
+                    wrap.style.display = 'none';
+                    empty.style.display = '';
+                    return;
+                }
+                empty.style.display = 'none';
+                wrap.style.display = 'grid';
+                let total = 0, count = 0;
+                list.forEach(item => {
+                    const price = Number(item.price || 0);
+                    const sub = price * item.quantity;
+                    total += sub;
+                    count += item.quantity;
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${item.productName || ''}</td>
+                        <td>¥ ${price.toFixed(2)}</td>
+                        <td><input class="qty" type="number" min="1" value="${item.quantity}"
+                            onchange="updateQty(${item.id}, this.value)"></td>
+                        <td>¥ ${sub.toFixed(2)}</td>
+                        <td><button class="btn btn-danger btn-sm" onclick="removeItem(${item.id})">删除</button></td>`;
+                    tbody.appendChild(tr);
+                });
+                document.getElementById('cart-count').textContent = '共 ' + count + ' 件';
+                document.getElementById('cart-total').textContent = '¥ ' + total.toFixed(2);
+            } catch (e) {
+                document.getElementById('cart-empty').textContent = e.message;
+            }
+        }
+        async function updateQty(id, quantity) {
+            await api('/api/cart/' + id, { method: 'PUT', body: JSON.stringify({ quantity: Number(quantity) }) });
+            loadCart();
+        }
+        async function removeItem(id) {
+            await api('/api/cart/' + id, { method: 'DELETE' });
+            loadCart();
+        }
+        window.updateQty = updateQty;
+        window.removeItem = removeItem;
+        document.addEventListener('DOMContentLoaded', loadCart);
+    </script>
+</div>
+</html>

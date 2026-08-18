@@ -6,30 +6,20 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>4.1.0</version>
-        <relativePath/> <!-- lookup parent from repository -->
+        <relativePath/>
     </parent>
     <groupId>com.king</groupId>
     <artifactId>AICustomerService</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>AICustomerService</name>
-    <description>AICustomerService</description>
-    <url/>
-    <licenses>
-        <license/>
-    </licenses>
-    <developers>
-        <developer/>
-    </developers>
-    <scm>
-        <connection/>
-        <developerConnection/>
-        <tag/>
-        <url/>
-    </scm>
+    <name>基于Spring AI2.0的带智能客服的商城系统</name>
+    <description>基于Spring AI2.0的带智能客服的商城系统</description>
+
     <properties>
         <java.version>17</java.version>
         <spring-ai.version>2.0.0</spring-ai.version>
+        <mybatis-plus.version>3.5.17</mybatis-plus.version>
     </properties>
+
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -41,26 +31,26 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+
     <dependencies>
+        <!-- Spring AI：OpenAI 兼容接口（对接阿里云 DashScope） -->
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-starter-model-openai</artifactId>
         </dependency>
-
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-
+        <!-- Spring AI：Redis 向量数据库 -->
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-starter-vector-store-redis</artifactId>
         </dependency>
+        <!-- Spring AI：RAG 问答 Advisor -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-vector-store-advisor</artifactId>
+        </dependency>
         <!--
         Spring AI RedisVectorStoreAutoConfiguration 仅在存在
         JedisConnectionFactory 时生效（不用 Lettuce）。
-        因此改用 Jedis，并从 starter 中排除 Lettuce。
         -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -76,7 +66,7 @@
             <groupId>redis.clients</groupId>
             <artifactId>jedis</artifactId>
         </dependency>
-        <!-- Tika 通用文档读取器 -->
+        <!-- Tika 通用文档读取器：txt/doc/pdf -->
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-tika-document-reader</artifactId>
@@ -96,17 +86,53 @@
             <artifactId>spring-boot-starter-webmvc</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-thymeleaf</artifactId>
+        </dependency>
+
+        <!-- MyBatis-Plus（Spring Boot 4 专用 starter） -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-spring-boot4-starter</artifactId>
+            <version>${mybatis-plus.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-jsqlparser</artifactId>
+            <version>${mybatis-plus.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
             <scope>runtime</scope>
+        </dependency>
+        <!-- 支付宝开放平台 SDK -->
+        <dependency>
+            <groupId>com.alipay.sdk</groupId>
+            <artifactId>alipay-sdk-java</artifactId>
+            <version>4.40.272.ALL</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
     </dependencies>
-
 
     <build>
         <plugins>
@@ -116,5 +142,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>

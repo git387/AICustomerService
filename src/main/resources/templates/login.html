@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout(~{::title}, ~{::content})}">
+<title>登录</title>
+<div th:fragment="content" class="content">
+    <div class="auth-page">
+        <div class="auth-side">
+            <h2>欢迎回来</h2>
+            <p>登录后即可下单、管理收货地址，并使用智能客服解答购物问题。</p>
+        </div>
+        <div class="auth-box">
+            <h2>用户登录</h2>
+            <p class="muted">测试账号 user1 / root123456</p>
+            <form class="form form-wide" onsubmit="loginSubmit(event)">
+                <input type="hidden" name="redirect" th:value="${param.redirect != null ? param.redirect[0] : '/'}">
+                <input name="username" placeholder="用户名" required>
+                <input name="password" type="password" placeholder="密码" required>
+                <button class="btn" type="submit">登录</button>
+            </form>
+            <p>还没有账号？<a href="/register">立即注册</a></p>
+        </div>
+    </div>
+</div>
+</html>

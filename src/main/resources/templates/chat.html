@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout(~{::title}, ~{::content})}">
+<title>智能客服</title>
+<div th:fragment="content" class="container content chat-page">
+    <div class="chat-shell">
+        <aside class="chat-side">
+            <h3>常见问题</h3>
+            <p class="muted">点一下即可提问</p>
+            <button type="button" class="quick-q" data-q="如何下单？">如何下单？</button>
+            <button type="button" class="quick-q" data-q="支持哪些支付方式？">支付方式</button>
+            <button type="button" class="quick-q" data-q="运费怎么计算？">运费说明</button>
+            <button type="button" class="quick-q" data-q="如何退换货？">退换货</button>
+            <button type="button" class="quick-q" data-q="如何用订单号查询我的订单？">查订单</button>
+            <button type="button" class="quick-q" data-q="如何查看我的订单？">查看订单</button>
+            <div class="chat-tips">
+                <p>可发送订单号查询本人订单状态，并跳转订单详情。商品价格与库存以页面展示为准。</p>
+                <a href="/orders">我的订单</a> · <a href="/">去逛商城</a>
+            </div>
+        </aside>
+        <section class="chat-box">
+            <header class="chat-toolbar">
+                <div class="chat-avatar">服</div>
+                <div>
+                    <strong>商城智能客服</strong>
+                    <p class="chat-online">在线 · 通常几秒内回复</p>
+                </div>
+            </header>
+            <div id="messages" class="messages"></div>
+            <form class="chat-input" onsubmit="sendChat(event)">
+                <textarea id="question" rows="1" placeholder="可直接发送订单号，例如：帮我查一下订单 202608181200001234" required></textarea>
+                <button class="btn" id="send-btn" type="submit">发送</button>
+            </form>
+        </section>
+    </div>
+    <script>
+        const QUICK = document.querySelectorAll('.quick-q');
+        function nowText() {
+            const d = new Date();
+            return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+        }
+        function formatTime(value) {
+            if (!value) return nowText();
+            const d = new Date(value);
+            if (Number.isNaN(d.getTime())) return nowText();
+            return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+        }
+        function escapeHtml(text) {
+            return String(text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+        function renderContent(role, content) {
+            if (role !== 'assistant') {
+                return escapeHtml(content);
+            }
+            return escapeHtml(content).replace(
+                /\[([^\]]+)\]\((\/orders\/\d+)\)/g,
+                '<a class="chat-link" href="$2">$1</a>'
+            );
+        }
+        function appendMsg(role, content, time) {
+            const box = document.getElementById('messages');
+            const empty = box.querySelector('.chat-welcome');
+            if (empty) empty.remove();
+            const row = document.createElement('div');
+            row.className = 'msg-row ' + role;
+            row.innerHTML = `
+                <div class="chat-avatar ${role === 'user' ? 'me' : ''}">${role === 'user' ? '我' : '服'}</div>
+                <div>
+                    <div class="msg ${role}"></div>
+                    <div class="msg-time">${formatTime(time)}</div>
+                </div>`;
+            row.querySelector('.msg').innerHTML = renderContent(role, content);
+            box.appendChild(row);
+            box.scrollTop = box.scrollHeight;
+        }
+        function showWelcome() {
+            const box = document.getElementById('messages');
+            if (box.children.length) return;
+            box.innerHTML = `<div class="chat-welcome">
+                <div class="chat-avatar">服</div>
+                <h3>您好，我是商城智能客服</h3>
+                <p>可以问我下单、支付、售后问题；也可以发送订单号查询您本人的订单，并跳转详情页。</p>
+            </div>`;
+        }
+        function setTyping(show) {
+            const old = document.getElementById('typing');
+            if (old) old.remove();
+            if (!show) return;
+            const box = document.getElementById('messages');
+            const row = document.createElement('div');
+            row.id = 'typing';
+            row.className = 'msg-row assistant';
+            row.innerHTML = `<div class="chat-avatar">服</div>
+                <div class="msg assistant typing"><span></span><span></span><span></span></div>`;
+            box.appendChild(row);
+            box.scrollTop = box.scrollHeight;
+        }
+        async function loadHistory() {
+            try {
+                const res = await api('/api/chat/history');
+                const list = res.data || [];
+                if (!list.length) {
+                    showWelcome();
+                    return;
+                }
+                list.forEach(m => appendMsg(m.role, m.content, m.createTime));
+            } catch (e) {
+                showWelcome();
+            }
+        }
+        async function ask(question) {
+            const input = document.getElementById('question');
+            const btn = document.getElementById('send-btn');
+            appendMsg('user', question);
+            input.value = '';
+            autoSize(input);
+            btn.disabled = true;
+            setTyping(true);
+            try {
+                const res = await api('/api/chat', {
+                    method: 'POST',
+                    body: JSON.stringify({ question })
+                });
+                setTyping(false);
+                appendMsg('assistant', res.data.answer);
+            } catch (e) {
+                setTyping(false);
+                appendMsg('assistant', e.message);
+            } finally {
+                btn.disabled = false;
+                input.focus();
+            }
+        }
+        async function sendChat(event) {
+            event.preventDefault();
+            const question = document.getElementById('question').value.trim();
+            if (!question || document.getElementById('send-btn').disabled) return;
+            await ask(question);
+        }
+        function autoSize(el) {
+            el.style.height = 'auto';
+            el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+        }
+        window.sendChat = sendChat;
+        document.addEventListener('DOMContentLoaded', () => {
+            const input = document.getElementById('question');
+            input.addEventListener('input', () => autoSize(input));
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendChat(e);
+                }
+            });
+            QUICK.forEach(btn => btn.addEventListener('click', () => ask(btn.dataset.q)));
+            loadHistory();
+        });
+    </script>
+</div>
+</html>

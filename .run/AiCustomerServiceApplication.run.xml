@@ -1,0 +1,11 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="AiCustomerServiceApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+    <module name="AICustomerService" />
+    <option name="SPRING_BOOT_MAIN_CLASS" value="com.king.aicustomerservice.AiCustomerServiceApplication" />
+    <option name="SHORTEN_COMMAND_LINE" value="JAR_MANIFEST" />
+    <shortenClasspath name="JAR_MANIFEST" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
